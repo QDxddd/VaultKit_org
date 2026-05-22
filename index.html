@@ -1,124 +1,688 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VaultKit — профессиональное шифрование</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>VAULTKIT</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: #000;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', monospace;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* КИРПИЧ */
+        .intro {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .brick-container {
+            perspective: 800px;
+        }
+
+        .brick {
+            width: 280px;
+            height: 130px;
+            background: #8B1A1A;
+            background-image: repeating-linear-gradient(0deg, #6B1010 1px, #8B1A1A 2px, #8B1A1A 15px, #6B1010 16px);
+            border-radius: 8px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 3px rgba(255,255,255,0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            animation: dropBrick 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55), shake 0.25s ease-in-out 0.5s;
+        }
+
+        .brick::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(90deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 3px, transparent 3px, transparent 12px);
+            border-radius: 8px;
+        }
+
+        .crack1, .crack2, .crack3 {
+            position: absolute;
+            background: #3a0505;
+            opacity: 0;
+            animation: crackShow 0.15s ease-out 0.55s forwards;
+        }
+        .crack1 { width: 45%; height: 2px; top: 35%; left: 25%; transform: rotate(28deg); }
+        .crack2 { width: 35%; height: 1.5px; bottom: 30%; right: 20%; transform: rotate(-20deg); }
+        .crack3 { width: 30%; height: 1.5px; top: 60%; left: 15%; transform: rotate(45deg); }
+
+        .brick span {
+            color: #fff;
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: 6px;
+            text-shadow: 2px 2px 0 #4a0505;
+            z-index: 2;
+        }
+
+        @keyframes dropBrick {
+            0% { transform: translateY(-500px) rotate(-20deg); opacity: 0; }
+            50% { transform: translateY(20px) rotate(2deg); }
+            100% { transform: translateY(0) rotate(0); opacity: 1; }
+        }
+
+        @keyframes shake {
+            0%,100% { transform: translate(0,0); }
+            20% { transform: translate(-4px,2px); }
+            40% { transform: translate(4px,-2px); }
+            60% { transform: translate(-2px,3px); }
+            80% { transform: translate(2px,-1px); }
+        }
+
+        @keyframes crackShow { to { opacity: 1; } }
+
+        .screen-shake {
+            animation: camShake 0.12s ease-in-out 3;
+        }
+        @keyframes camShake {
+            0%,100% { transform: translate(0,0); }
+            25% { transform: translate(-5px,3px); }
+            75% { transform: translate(5px,-3px); }
+        }
+
+        .intro.fade-out {
+            animation: fadeOut 0.6s forwards;
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
+        }
+
+        /* ЗАГРУЗКА */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 1500;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            transition: opacity 0.5s;
+        }
+        .loading-screen.hide { opacity: 0; pointer-events: none; }
+        .loading-text { color: #fff; font-size: 28px; letter-spacing: 6px; font-weight: 300; text-transform: uppercase; }
+        .loading-number { color: #fff; font-size: 56px; font-weight: 700; font-family: monospace; }
+        .loading-bar { width: 320px; height: 2px; background: #1a1a1a; border-radius: 2px; overflow: hidden; }
+        .loading-fill { width: 0%; height: 100%; background: #fff; transition: width 0.03s linear; }
+
+        /* ОСНОВНОЙ UI */
+        .main-content {
+            opacity: 0;
+            animation: contentFade 0.5s ease 0.3s forwards;
+        }
+        @keyframes contentFade { to { opacity: 1; } }
+
+        .vault-ui {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #151515;
+        }
+        .nav-brand { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.5px; color: #fff; }
+        .nav-actions button {
+            background: transparent;
+            border: 1px solid #222;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .nav-actions button:hover { border-color: #fff; color: #fff; }
+
+        .grid { display: grid; grid-template-columns: 1fr 0.9fr; gap: 1.5rem; }
+        .panel { background: #0a0a0a; border-radius: 28px; padding: 1.8rem; border: 1px solid #181818; }
+
+        .mode-switch {
+            display: flex;
+            gap: 0.5rem;
+            background: #000;
+            border-radius: 40px;
+            padding: 0.25rem;
+            margin-bottom: 2rem;
+            width: fit-content;
+        }
+        .mode-btn {
+            background: transparent;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 40px;
+            color: #666;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .mode-btn.active { background: #1a1a1a; color: #fff; }
+
+        .password-area { margin-bottom: 1.8rem; }
+        .input-wrapper { display: flex; gap: 0.5rem; margin-bottom: 0.8rem; }
+        .input-wrapper input {
+            flex: 1;
+            background: #000;
+            border: 1px solid #222;
+            border-radius: 20px;
+            padding: 0.9rem 1rem;
+            color: #fff;
+            font-size: 0.9rem;
+            font-family: monospace;
+        }
+        .input-wrapper input:focus { outline: none; border-color: #444; }
+        .input-wrapper button {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 20px;
+            padding: 0 1rem;
+            color: #fff;
+            cursor: pointer;
+        }
+        .meter { height: 2px; background: #1a1a1a; border-radius: 2px; }
+        .meter-fill { width: 0%; height: 100%; background: #fff; border-radius: 2px; }
+
+        .dropzone {
+            border: 2px dashed #222;
+            border-radius: 24px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 1.2rem;
+            background: #050505;
+        }
+        .dropzone.drag-over { border-color: #fff; background: #0a0a0a; }
+        .dropzone-icon { font-size: 3rem; margin-bottom: 0.8rem; opacity: 0.5; }
+        .dropzone p { color: #888; font-size: 0.85rem; margin-bottom: 1rem; }
+        .dropzone-buttons { display: flex; gap: 0.8rem; justify-content: center; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #2a2a2a;
+            border-radius: 40px;
+            padding: 0.5rem 1.2rem;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .btn-outline:hover { border-color: #fff; color: #fff; }
+
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-top: 1px solid #141414;
+            border-bottom: 1px solid #141414;
+            margin-bottom: 1rem;
+            font-size: 0.7rem;
+            color: #555;
+        }
+        .toolbar { display: flex; gap: 1rem; margin-bottom: 1rem; }
+        .tool-btn { background: transparent; border: none; color: #666; cursor: pointer; font-size: 0.7rem; }
+        .tool-btn:hover:not(:disabled) { color: #fff; }
+        .filelist {
+            border-radius: 20px;
+            border: 1px solid #141414;
+            max-height: 280px;
+            overflow-y: auto;
+            background: #000;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid #141414;
+            cursor: pointer;
+        }
+        .file-item:hover { background: #0f0f0f; }
+        .file-item.selected { background: #141414; }
+        .file-name { flex: 1; font-family: monospace; font-size: 0.75rem; color: #ccc; }
+        .file-size { font-size: 0.65rem; color: #555; }
+
+        .options { margin-bottom: 1.5rem; }
+        .checkbox { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; color: #ccc; font-size: 0.8rem; }
+
+        .btn-primary {
+            width: 100%;
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 40px;
+            padding: 1rem;
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 1rem 0;
+        }
+        .btn-primary:disabled { opacity: 0.3; }
+
+        .progress { margin: 1rem 0; }
+        .progress-bar { height: 2px; background: #1a1a1a; border-radius: 2px; }
+        .progress-fill { width: 0%; height: 100%; background: #fff; border-radius: 2px; }
+
+        .history { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #141414; }
+        .history-header { display: flex; justify-content: space-between; margin-bottom: 0.8rem; font-size: 0.7rem; color: #555; }
+        .history-list { max-height: 120px; overflow-y: auto; }
+        .history-item { padding: 0.3rem 0; font-size: 0.65rem; color: #666; font-family: monospace; }
+
+        .footer { margin-top: 2rem; text-align: center; font-size: 0.6rem; color: #333; letter-spacing: 1px; }
+        .feature-badge {
+            display: inline-block;
+            background: #111;
+            border-radius: 20px;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.55rem;
+            color: #555;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .features { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #141414; }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
-    <div class="app">
-        <nav class="nav">
-            <div class="nav-brand">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="3" y="11" width="18" height="11" rx="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                <span>VaultKit</span>
-            </div>
-            <div class="nav-actions">
-                <button id="clearAllBtn" class="nav-btn">Очистить всё</button>
-                <button id="settingsBtn" class="nav-btn">⚙️</button>
-            </div>
-        </nav>
 
-        <main class="main">
-            <div class="grid">
-                <div class="panel">
-                    <div class="mode-switch">
-                        <button class="mode-btn active" data-mode="encrypt">🔒 Шифрование</button>
-                        <button class="mode-btn" data-mode="decrypt">🔓 Дешифрование</button>
-                    </div>
-
-                    <div class="password-area">
-                        <div class="input-wrapper">
-                            <input type="password" id="password" placeholder="Ключевая фраза" autocomplete="off">
-                            <button id="togglePassword" class="input-icon"></button>
-                            <button id="generatePassword" class="input-icon right">🎲</button>
-                        </div>
-                        <div class="meter">
-                            <div class="meter-fill" id="meterFill"></div>
-                            <span class="meter-text" id="meterText">—</span>
-                        </div>
-                    </div>
-
-                    <div class="dropzone" id="dropzone">
-                        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-                            <path d="M12 3v12m0 0-3-3m3 3 3-3M5 17h14" stroke-linecap="round"/>
-                        </svg>
-                        <p>Перетащите файлы или папки</p>
-                        <div class="dropzone-buttons">
-                            <button id="selectFiles" class="btn-outline">📄 Файлы</button>
-                            <button id="selectFolder" class="btn-outline">📁 Папку</button>
-                        </div>
-                        <input type="file" id="fileInput" multiple hidden>
-                        <input type="file" id="folderInput" webkitdirectory directory hidden>
-                    </div>
-
-                    <div class="toolbar">
-                        <button id="removeSelected" class="tool-btn" disabled>🗑 Удалить выбранное</button>
-                        <button id="selectAll" class="tool-btn">✓ Выбрать всё</button>
-                        <span class="tool-stats" id="stats">0 файлов</span>
-                    </div>
-
-                    <div class="filelist" id="filelist"></div>
-                </div>
-
-                <div class="panel">
-                    <div class="options">
-                        <div class="option">
-                            <label class="checkbox">
-                                <input type="checkbox" id="preserveStructure" checked>
-                                <span>Сохранять структуру папок</span>
-                            </label>
-                        </div>
-                        <div class="option">
-                            <label class="checkbox">
-                                <input type="checkbox" id="compressFirst">
-                                <span>Сжимать перед шифрованием</span>
-                            </label>
-                        </div>
-                        <div class="option">
-                            <label>Имя выходного файла</label>
-                            <input type="text" id="outputName" placeholder="archive" class="input-small">
-                            <span class="ext">.vault</span>
-                        </div>
-                    </div>
-
-                    <div class="actions">
-                        <button id="processBtn" class="btn-primary" disabled>
-                            <span>▶ Начать обработку</span>
-                        </button>
-                    </div>
-
-                    <div class="progress" id="progress" hidden>
-                        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-                        <div class="progress-info">
-                            <span id="progressStatus">Подготовка...</span>
-                            <span id="progressPercent">0%</span>
-                        </div>
-                    </div>
-
-                    <div class="history" id="history">
-                        <div class="history-header">
-                            <span>История операций</span>
-                            <button id="clearHistory" class="text-btn">Очистить</button>
-                        </div>
-                        <div class="history-list" id="historyList">
-                            <div class="history-empty">—</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+<div class="intro" id="introScreen">
+    <div class="brick-container">
+        <div class="brick">
+            <div class="crack1"></div>
+            <div class="crack2"></div>
+            <div class="crack3"></div>
+            <span>VAULTKIT</span>
+        </div>
     </div>
+</div>
 
-    <script src="js/crypto-core.js"></script>
-    <script src="js/file-handler.js"></script>
-    <script src="js/archive-manager.js"></script>
-    <script src="js/batch-processor.js"></script>
-    <script src="js/app.js"></script>
+<div class="loading-screen" id="loadingScreen">
+    <div class="loading-text">DOWNLOAD FILE</div>
+    <div class="loading-number" id="loadingNumber">0</div>
+    <div class="loading-bar"><div class="loading-fill" id="loadingFill"></div></div>
+</div>
+
+<div class="main-content" id="mainContent" style="display: none;">
+    <div class="vault-ui">
+        <div class="nav">
+            <div class="nav-brand">VAULTKIT</div>
+            <div class="nav-actions"><button id="clearAllBtn">ОЧИСТИТЬ</button></div>
+        </div>
+
+        <div class="grid">
+            <div class="panel">
+                <div class="mode-switch">
+                    <button class="mode-btn active" data-mode="encrypt">ШИФРОВАНИЕ</button>
+                    <button class="mode-btn" data-mode="decrypt">ДЕШИФРОВАНИЕ</button>
+                </div>
+
+                <div class="password-area">
+                    <div class="input-wrapper">
+                        <input type="password" id="password" placeholder="КЛЮЧЕВАЯ ФРАЗА">
+                        <button id="togglePassword">👁</button>
+                        <button id="generatePassword">🎲</button>
+                    </div>
+                    <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+                </div>
+
+                <div class="dropzone" id="dropzone">
+                    <div class="dropzone-icon">📂</div>
+                    <p>ПЕРЕТАЩИТЕ ФАЙЛЫ ИЛИ ПАПКУ</p>
+                    <div class="dropzone-buttons">
+                        <button id="selectFiles" class="btn-outline">ВЫБРАТЬ ФАЙЛЫ</button>
+                        <button id="selectFolder" class="btn-outline">ВЫБРАТЬ ПАПКУ</button>
+                    </div>
+                    <input type="file" id="fileInput" multiple hidden>
+                    <input type="file" id="folderInput" webkitdirectory directory hidden>
+                </div>
+
+                <div class="info-bar">
+                    <span id="fileCount">0 ФАЙЛОВ</span>
+                    <span id="totalSize">0 B</span>
+                </div>
+
+                <div class="toolbar">
+                    <button id="selectAllBtn" class="tool-btn">ВЫБРАТЬ ВСЁ</button>
+                    <button id="removeSelectedBtn" class="tool-btn" disabled>УДАЛИТЬ</button>
+                    <button id="clearFilesBtn" class="tool-btn">ОЧИСТИТЬ</button>
+                </div>
+
+                <div class="filelist" id="filelist"></div>
+            </div>
+
+            <div class="panel">
+                <div class="options">
+                    <label class="checkbox"><input type="checkbox" id="preserveStructure" checked> СОХРАНЯТЬ СТРУКТУРУ</label>
+                    <label class="checkbox"><input type="checkbox" id="compressFirst" checked> СЖАТИЕ ПЕРЕД ШИФРОВАНИЕМ</label>
+                </div>
+
+                <button id="processBtn" class="btn-primary" disabled>▶ НАЧАТЬ</button>
+
+                <div class="progress" id="progress" hidden>
+                    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                </div>
+
+                <div class="history">
+                    <div class="history-header"><span>ИСТОРИЯ</span><button id="clearHistory" style="background:none;border:none;color:#555;cursor:pointer;">ОЧИСТИТЬ</button></div>
+                    <div class="history-list" id="historyList"><div style="color:#333;text-align:center;">—</div></div>
+                </div>
+
+                <div class="features">
+                    <span class="feature-badge">📁 СОХРАНЕНИЕ СТРУКТУРЫ</span>
+                    <span class="feature-badge">🔐 AES-256-GCM</span>
+                    <span class="feature-badge">⚡ ПАКЕТНАЯ ОБРАБОТКА</span>
+                    <span class="feature-badge">🔄 DRAG & DROP</span>
+                    <span class="feature-badge">💾 ЛОКАЛЬНО</span>
+                    <span class="feature-badge">🔓 ДЕШИФРОВАНИЕ .VAULT</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">VAULTKIT · AES-256-GCM · PBKDF2 · 120K ИТЕРАЦИЙ · ДАННЫЕ НЕ ПОКИДАЮТ УСТРОЙСТВО</div>
+    </div>
+</div>
+
+<script>
+    // ========== 1. КИРПИЧ С ТРЯСКОЙ ==========
+    const intro = document.getElementById('introScreen');
+    setTimeout(() => {
+        document.body.classList.add('screen-shake');
+        setTimeout(() => document.body.classList.remove('screen-shake'), 400);
+        setTimeout(() => {
+            intro.classList.add('fade-out');
+            setTimeout(() => {
+                intro.style.display = 'none';
+                startLoading();
+            }, 600);
+        }, 800);
+    }, 600);
+
+    // ========== 2. ЗАГРУЗКА С ПРОВИСАНИЕМ ==========
+    function startLoading() {
+        const loadingScreen = document.getElementById('loadingScreen');
+        const loadingNumber = document.getElementById('loadingNumber');
+        const loadingFill = document.getElementById('loadingFill');
+        const mainContent = document.getElementById('mainContent');
+        loadingScreen.style.display = 'flex';
+        let count = 0;
+        let speed = 38;
+        let slowZone = false;
+        const interval = setInterval(() => {
+            if (count < 367) {
+                count++;
+                loadingNumber.innerText = count;
+                loadingFill.style.width = (count / 367) * 100 + '%';
+                if (count >= 170 && count <= 200 && !slowZone) {
+                    speed = 9;
+                    slowZone = true;
+                    setTimeout(() => { speed = 75; }, 450);
+                }
+                if (count > 310) speed = 85;
+            } else {
+                clearInterval(interval);
+                loadingScreen.classList.add('hide');
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                    mainContent.style.display = 'block';
+                }, 500);
+            }
+        }, 1000 / speed);
+    }
+
+    // ========== 3. ОСНОВНАЯ ЛОГИКА ==========
+    let currentFiles = [];
+    let selectedIndices = new Set();
+    let currentMode = 'encrypt';
+    let history = JSON.parse(localStorage.getItem('vaultkit_history') || '[]');
+
+    function saveHistory() {
+        localStorage.setItem('vaultkit_history', JSON.stringify(history.slice(0, 20)));
+        renderHistory();
+    }
+    function addHistory(action, detail, ok = true) {
+        history.unshift({ time: new Date().toLocaleTimeString(), action, detail, ok });
+        saveHistory();
+    }
+    function renderHistory() {
+        const container = document.getElementById('historyList');
+        if (!container) return;
+        if (!history.length) { container.innerHTML = '<div style="color:#333;text-align:center;">—</div>'; return; }
+        container.innerHTML = history.map(h => `<div class="history-item">${h.time} ${h.action} ${h.ok ? '✓' : '✗'} ${h.detail}</div>`).join('');
+    }
+    function formatSize(b) {
+        if (!b) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let i = 0;
+        while (b >= 1024 && i < 3) { b /= 1024; i++; }
+        return b.toFixed(1) + ' ' + units[i];
+    }
+
+    function updateFileList() {
+        const container = document.getElementById('filelist');
+        const fileCountSpan = document.getElementById('fileCount');
+        const totalSizeSpan = document.getElementById('totalSize');
+        const removeBtn = document.getElementById('removeSelectedBtn');
+        if (!container) return;
+        if (!currentFiles.length) {
+            container.innerHTML = '<div style="padding:1rem;text-align:center;color:#333;">НЕТ ФАЙЛОВ</div>';
+            fileCountSpan.innerText = '0 ФАЙЛОВ';
+            totalSizeSpan.innerText = '0 B';
+            removeBtn.disabled = true;
+            document.getElementById('processBtn').disabled = currentMode === 'encrypt';
+            return;
+        }
+        const totalSize = currentFiles.reduce((s, f) => s + (f.size || 0), 0);
+        fileCountSpan.innerText = currentFiles.length + ' ФАЙЛОВ';
+        totalSizeSpan.innerText = formatSize(totalSize);
+        container.innerHTML = currentFiles.map((f, idx) => `
+            <div class="file-item ${selectedIndices.has(idx) ? 'selected' : ''}" data-index="${idx}">
+                <span style="opacity:0.5;">${f.webkitRelativePath ? '📁' : '📄'}</span>
+                <span class="file-name">${(f.webkitRelativePath || f.name).substring(0, 50)}</span>
+                <span class="file-size">${formatSize(f.size)}</span>
+            </div>
+        `).join('');
+        document.querySelectorAll('.file-item').forEach(el => {
+            const idx = parseInt(el.dataset.index);
+            el.addEventListener('click', (e) => {
+                if (selectedIndices.has(idx)) selectedIndices.delete(idx);
+                else selectedIndices.add(idx);
+                updateFileList();
+            });
+        });
+        removeBtn.disabled = selectedIndices.size === 0;
+        const hasPass = document.getElementById('password').value.trim().length > 0;
+        if (currentMode === 'encrypt') document.getElementById('processBtn').disabled = currentFiles.length === 0 || !hasPass;
+        else document.getElementById('processBtn').disabled = false;
+    }
+
+    async function encryptFiles(files, passphrase, preserve, compress, onProgress) {
+        const zip = new JSZip();
+        for (let f of files) {
+            const path = preserve ? (f.webkitRelativePath || f.name) : f.name.split('/').pop();
+            zip.file(path, await f.arrayBuffer(), { compression: compress ? 'DEFLATE' : 'STORE' });
+        }
+        const zipBlob = await zip.generateAsync({ type: 'blob', compression: compress ? 'DEFLATE' : 'STORE' }, (m) => { if (onProgress) onProgress(m.percent / 100); });
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const enc = new TextEncoder();
+        const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+        const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+        const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, await zipBlob.arrayBuffer());
+        const result = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+        result.set(salt, 0);
+        result.set(iv, salt.length);
+        result.set(new Uint8Array(encrypted), salt.length + iv.length);
+        return new Blob([result]);
+    }
+
+    async function decryptFile(fileBlob, passphrase) {
+        const buffer = await fileBlob.arrayBuffer();
+        const data = new Uint8Array(buffer);
+        const salt = data.slice(0, 16);
+        const iv = data.slice(16, 28);
+        const ciphertext = data.slice(28);
+        const enc = new TextEncoder();
+        const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
+        const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+        const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+        return new Blob([decrypted]);
+    }
+
+    document.getElementById('selectFiles')?.addEventListener('click', () => document.getElementById('fileInput').click());
+    document.getElementById('selectFolder')?.addEventListener('click', () => document.getElementById('folderInput').click());
+    document.getElementById('fileInput')?.addEventListener('change', (e) => {
+        if (e.target.files.length) { currentFiles.push(...Array.from(e.target.files)); selectedIndices.clear(); updateFileList(); }
+    });
+    document.getElementById('folderInput')?.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+            const files = Array.from(e.target.files);
+            for (let f of files) f.webkitRelativePath = f.webkitRelativePath || f.name;
+            currentFiles.push(...files);
+            selectedIndices.clear();
+            updateFileList();
+        }
+    });
+
+    const dropzoneDiv = document.getElementById('dropzone');
+    dropzoneDiv?.addEventListener('dragover', (e) => { e.preventDefault(); dropzoneDiv.classList.add('drag-over'); });
+    dropzoneDiv?.addEventListener('dragleave', () => dropzoneDiv.classList.remove('drag-over'));
+    dropzoneDiv?.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dropzoneDiv.classList.remove('drag-over');
+        const items = e.dataTransfer.items;
+        const files = [];
+        const readDir = async (entry, path = '') => {
+            const reader = entry.createReader();
+            const entries = await new Promise(res => reader.readEntries(res));
+            for (let ent of entries) {
+                const p = path ? `${path}/${ent.name}` : ent.name;
+                if (ent.isFile) { const file = await new Promise(res => ent.file(res)); file.webkitRelativePath = p; files.push(file); }
+                else if (ent.isDirectory) await readDir(ent, p);
+            }
+        };
+        for (let i = 0; i < items.length; i++) {
+            const entry = items[i].webkitGetAsEntry();
+            if (entry.isDirectory) await readDir(entry);
+            else { const file = items[i].getAsFile(); if (file) files.push(file); }
+        }
+        if (files.length) { currentFiles.push(...files); selectedIndices.clear(); updateFileList(); }
+    });
+
+    document.getElementById('selectAllBtn')?.addEventListener('click', () => { selectedIndices.clear(); for (let i = 0; i < currentFiles.length; i++) selectedIndices.add(i); updateFileList(); });
+    document.getElementById('removeSelectedBtn')?.addEventListener('click', () => { currentFiles = currentFiles.filter((_, i) => !selectedIndices.has(i)); selectedIndices.clear(); updateFileList(); });
+    document.getElementById('clearFilesBtn')?.addEventListener('click', () => { currentFiles = []; selectedIndices.clear(); updateFileList(); });
+    document.getElementById('clearAllBtn')?.addEventListener('click', () => { currentFiles = []; selectedIndices.clear(); updateFileList(); });
+
+    document.getElementById('password')?.addEventListener('input', () => {
+        const pass = document.getElementById('password').value;
+        const hasPass = pass.length > 0;
+        if (currentMode === 'encrypt') document.getElementById('processBtn').disabled = currentFiles.length === 0 || !hasPass;
+        const strength = Math.min(100, Math.floor(pass.length * 8));
+        document.getElementById('meterFill').style.width = strength + '%';
+    });
+    document.getElementById('generatePassword')?.addEventListener('click', () => {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+        let pass = '';
+        for (let i = 0; i < 20; i++) pass += chars[Math.floor(Math.random() * chars.length)];
+        document.getElementById('password').value = pass;
+        document.getElementById('password').dispatchEvent(new Event('input'));
+    });
+
+    document.getElementById('processBtn')?.addEventListener('click', async () => {
+        const pass = document.getElementById('password').value;
+        const progressDiv = document.getElementById('progress');
+        const fill = document.getElementById('progressFill');
+        
+        if (currentMode === 'decrypt') {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.vault';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                progressDiv.hidden = false;
+                fill.style.width = '20%';
+                try {
+                    const decryptedZip = await decryptFile(file, pass);
+                    fill.style.width = '100%';
+                    saveAs(decryptedZip, file.name.replace(/\.vault$/, '.zip'));
+                    addHistory('ДЕШИФРОВАНИЕ', file.name, true);
+                } catch (err) {
+                    addHistory('ДЕШИФРОВАНИЕ', 'Неверный пароль или файл повреждён', false);
+                    alert('Ошибка: неверный пароль');
+                }
+                setTimeout(() => progressDiv.hidden = true, 1500);
+            };
+            input.click();
+            return;
+        }
+        
+        if (!pass || !currentFiles.length) return;
+        const preserve = document.getElementById('preserveStructure')?.checked;
+        const compress = document.getElementById('compressFirst')?.checked;
+        progressDiv.hidden = false;
+        fill.style.width = '0%';
+        try {
+            const encryptedBlob = await encryptFiles(currentFiles, pass, preserve, compress, (p) => { fill.style.width = (p * 100) + '%'; });
+            const name = 'vault_' + Date.now() + '.vault';
+            saveAs(encryptedBlob, name);
+            addHistory('ШИФРОВАНИЕ', currentFiles.length + ' файлов', true);
+            currentFiles = [];
+            selectedIndices.clear();
+            updateFileList();
+            setTimeout(() => progressDiv.hidden = true, 1500);
+        } catch(e) { addHistory('ОШИБКА', e.message, false); progressDiv.hidden = true; }
+    });
+
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentMode = btn.dataset.mode;
+            const processBtn = document.getElementById('processBtn');
+            processBtn.innerText = currentMode === 'encrypt' ? '▶ ЗАШИФРОВАТЬ' : '▶ ВЫБРАТЬ .VAULT ФАЙЛ';
+            if (currentMode === 'decrypt') processBtn.disabled = false;
+            else {
+                const hasPass = document.getElementById('password').value.length > 0;
+                processBtn.disabled = currentFiles.length === 0 || !hasPass;
+            }
+        });
+    });
+
+    document.getElementById('clearHistory')?.addEventListener('click', () => { history = []; saveHistory(); });
+    renderHistory();
+    updateFileList();
+</script>
 </body>
 </html>
